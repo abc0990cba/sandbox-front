@@ -1,33 +1,48 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
 import './App.css'
+import { Button } from './components/ui/button';
+
+export const getGoogleUrl = (from: string) => {
+  const rootUrl = `https://accounts.google.com/o/oauth2/v2/auth`;
+
+  const options = {
+    redirect_uri: import.meta.env.VITE_GOOGLE_OAUTH_REDIRECT as string,
+    client_id: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID as string,
+    access_type: "offline",
+    response_type: "code",
+    prompt: "consent",
+    scope: [
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ].join(" "),
+    state: from,
+  };
+
+  const qs = new URLSearchParams(options);
+
+  return `${rootUrl}?${qs.toString()}`;
+};
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [nodeVersion, setNodeVersion] = useState('');
+
+  const from = window.location.pathname;
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_SERVER_ENDPOINT + '/env', {
+      credentials: 'include',
+    })
+    .then(resp => resp.text())
+    .then(txt => setNodeVersion(txt))
+  }, [])
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+    <h2>{nodeVersion || 'not authorized'}</h2>
+    <Button asChild>
+      <a href={getGoogleUrl(from)} target="_blank">Google login</a>
+    </Button>
+    <Button>tailwind</Button>
     </>
   )
 }
